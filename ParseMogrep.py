@@ -2,6 +2,7 @@ import numpy as np
 import numpy.ma as ma
 from netCDF4 import Dataset
 from datetime import date, timedelta
+import pandas as pd
 
 
 class ParseMogrep(object):
@@ -97,8 +98,15 @@ class ParseMogrep(object):
                 x = np.concatenate((x, x1))
         return x
 
+    def toCsv(self, ndarray, colArray, filename):
+        myDF = pd.DataFrame(ndarray)
+        myDF.columns = colArray
+        myDF.to_csv(filename, index=False)
+
 
 if __name__ == "__main__":
     mog = ParseMogrep()
+    colArray = ['temp', 'lat', 'long', 'press', 'date']
     flat = mog.parse_airtemp()
     print("Shape:{} Size={}".format(flat.shape, flat.size))
+    mog.toCsv(flat, colArray, "out/air_temp.csv")
