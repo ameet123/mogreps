@@ -1,5 +1,10 @@
 ## netCDF4 Parsing
 
+### Change:
+
+A simpler approach to reduce added
+
+
 ### Objective:
 
 Parse a `netCDF4` format file into more manageable and human readable format for further processing.
@@ -34,16 +39,16 @@ This has four dimensions - *time, pressure, latitude, longitude -> temperature*
 If we look at the numpy array, it will be a 4-dimensional array with dims,
 `Shape: (4,2,528,421)`
 However, all the data will apear to be temperature. There will be no trace of a date, pressure or latitude.
-These other dimensions/fields are to be *deduced* from other *Variables* based on `indexing` in munpy.
+These other dimensions/fields are to be *deduced* from other *Variables* based on `indexing` in numpy.
 
-Contiuing with the same example, we know that the first dimension of size 4 is time.
+Continuing with the same example, we know that the first dimension of size 4 is time.
 Then we look inside the file for a variable called `time` and extract the numpy array from there.
 This will be a single dimensional array with 4 values of dates. These are the dates which match the
 indexes 0,1,2,3 from the air_temperature numpy array.
 So if we are looking at the first *row* of air_temp[0],
 then it pertains to the first date from the `time` array.
 
-### Implemntation
+### Implementation
 
 The specific approach reduces the dimensions from the main variable and appends the other dimension values.
 Therefore, a 4-D air_temp variable will be converted to a 2-D array with rows and 5 columns.

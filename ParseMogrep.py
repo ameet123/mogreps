@@ -106,11 +106,93 @@ class ParseMogrep(object):
         else:
             myDF.to_csv(filename, index=False)
 
+    def tiling(self, a, first, second, third, fourth):
+        print "MyShape:{} size={}".format(a.shape, a.size)
+        item_count = a.size
+        # First calculate the size of the array, that's how many rows we will have in the final product.
+        m_all = a.reshape((-1, 1))
+        # start from the end, last dim
+
+        repeat_cnt = 1
+        level = 0
+        if level == 0:
+            repeat_cnt = 1
+        else:
+            repeat_cnt = a.shape[level] * repeat_cnt
+        cur_array = fourth
+        tile_cnt = item_count / (cur_array.size * repeat_cnt)
+        cur_col = np.tile(np.repeat(cur_array, repeat_cnt), tile_cnt).reshape((-1, 1))
+        m_all = np.concatenate((m_all, cur_col), axis=1)
+
+        level = -1
+        if level == 0:
+            repeat_cnt = 1
+        else:
+            repeat_cnt = a.shape[level] * repeat_cnt
+        cur_array = third
+        tile_cnt = item_count / (cur_array.size * repeat_cnt)
+        cur_col = np.tile(np.repeat(cur_array, repeat_cnt), tile_cnt).reshape((-1, 1))
+        m_all = np.concatenate((m_all, cur_col), axis=1)
+
+        # 2nd
+        level = level - 1
+        if level == 0:
+            repeat_cnt = 1
+        else:
+            repeat_cnt = a.shape[level] * repeat_cnt
+        cur_array = second
+        tile_cnt = item_count / (cur_array.size * repeat_cnt)
+        cur_col = np.tile(np.repeat(cur_array, repeat_cnt), tile_cnt).reshape((-1, 1))
+        m_all = np.concatenate((m_all, cur_col), axis=1)
+        # 1st
+        level = level - 1
+        if level == 0:
+            repeat_cnt = 1
+        else:
+            repeat_cnt = a.shape[level] * repeat_cnt
+        cur_array = first
+        tile_cnt = item_count / (cur_array.size * repeat_cnt)
+        cur_col = np.tile(np.repeat(cur_array, repeat_cnt), tile_cnt).reshape((-1, 1))
+        m_all = np.concatenate((m_all, cur_col), axis=1)
+
+    def reduce(self, a, dims):
+        """
+        iterate over the dimensions of the array and progressive build the columns through a combination of
+        `tile` and `repeat`
+        :param a: the input array of multi-dimensions
+        :param dims: an array of feature vectors of size (n,) in order of last one first.
+        i.e. the first element of this array is an np array that matches or corresponds to the last dimension in a
+        :return:
+        """
+        item_count = a.size
+        m_all = a.reshape((-1, 1))
+        repeat_cnt = 1
+        level = 0
+        for i in range(a.ndim):
+            if level == 0:
+                repeat_cnt = 1
+                level = -1
+            else:
+                repeat_cnt = a.shape[level] * repeat_cnt
+                level = level - 1
+            cur_array = dims[i]
+            tile_cnt = item_count / (cur_array.size * repeat_cnt)
+            cur_col = np.tile(np.repeat(cur_array, repeat_cnt), tile_cnt).reshape((-1, 1))
+            m_all = np.concatenate((m_all, cur_col), axis=1)
+        return m_all
+
+    def process_air_temp(self):
+        air_temp = self.get_np_array_unmasked('air_temperature')
+        dims = [self.long, self.lat, self.pressure0, self.time]
+        return self.reduce(air_temp, dims)
+
 
 if __name__ == "__main__":
     mog = ParseMogrep()
-    colArray = ['temp', 'lat', 'long', 'press', 'date']
-    flat = mog.parse_airtemp()
-
-    print("Shape:{} Size={}".format(flat.shape, flat.size))
-    mog.toCsv(flat, colArray, "out/air_temp.csv.gz", True)
+    colArray = ['temperature', 'longitude', 'latitude', 'pressure', 'date']
+    # flat = mog.parse_airtemp()
+    # print("Shape:{} Size={}".format(flat.shape, flat.size))
+    # mog.toCsv(flat, colArray, "out/air_temp.csv.old_method", False)
+    x =mog.process_air_temp()
+    print("Size of product:{}".format(x.shape))
+    mog.toCsv(x, colArray, "out/air_temp.csv", False)
