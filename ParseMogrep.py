@@ -39,14 +39,14 @@ class ParseMogrep(object):
         self.log("Shape of {} => {}".format(var, a.shape))
         return a
 
-    def get3d_from_4d(self, name, row, col, third, second):
+    def reduce_4d(self, name, row, col, third, second):
         air_temp = self.get_np_array_unmasked(name)
         self.log("Total size of records in {}:{} Shape:{}".format(name, air_temp.size, air_temp.shape))
         # Flatten
         w = None
         for j in range(air_temp.shape[0]):
             # This is 4th dim
-            w1 = self.get2d_from3d(air_temp[j], row, col, third)
+            w1 = self.reduce_3d(air_temp[j], row, col, third)
             # get second array val
             second_arr = np.full((w1.shape[0], 1), second[j])
             w1 = np.concatenate((w1, second_arr), axis=1)
@@ -57,9 +57,9 @@ class ParseMogrep(object):
         return w
 
     def parse_airtemp(self):
-        return self.get3d_from_4d('air_temperature', self.lat, self.long, self.pressure0, self.time)
+        return self.reduce_4d('air_temperature', self.lat, self.long, self.pressure0, self.time)
 
-    def get_2d_array(self, arr, r, c):
+    def reduce_2d(self, arr, r, c):
         """
         convert a 2D array by appending additional attributes for each element from r and c
         :param arr:
@@ -77,7 +77,7 @@ class ParseMogrep(object):
                 w = np.concatenate((w, z))
         return w
 
-    def get2d_from3d(self, arr3, row, col, third_dim_array):
+    def reduce_3d(self, arr3, row, col, third_dim_array):
         """
 
         :param arr3: this is a 3D array
@@ -88,7 +88,7 @@ class ParseMogrep(object):
         """
         x = None
         for i in range(arr3.shape[0]):
-            x1 = self.get_2d_array(arr3[i], row, col)
+            x1 = self.reduce_2d(arr3[i], row, col)
             # Here get hte pressure(i.e. 3rd dim) and concatenate
             third_array = np.full((x1.shape[0], 1), third_dim_array[i])
             x1 = np.concatenate((x1, third_array), axis=1)
@@ -98,15 +98,19 @@ class ParseMogrep(object):
                 x = np.concatenate((x, x1))
         return x
 
-    def toCsv(self, ndarray, colArray, filename):
+    def toCsv(self, ndarray, colArray, filename, compression=False):
         myDF = pd.DataFrame(ndarray)
         myDF.columns = colArray
-        myDF.to_csv(filename, index=False)
+        if compression:
+            myDF.to_csv(filename, index=False, compression='gzip')
+        else:
+            myDF.to_csv(filename, index=False)
 
 
 if __name__ == "__main__":
     mog = ParseMogrep()
     colArray = ['temp', 'lat', 'long', 'press', 'date']
     flat = mog.parse_airtemp()
+
     print("Shape:{} Size={}".format(flat.shape, flat.size))
-    mog.toCsv(flat, colArray, "out/air_temp.csv")
+    mog.toCsv(flat, colArray, "out/air_temp.csv.gz", True)
