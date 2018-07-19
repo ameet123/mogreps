@@ -29,7 +29,7 @@ class ParseMogrep(object):
         :return: np arra of datetime
         """
         t = self.get_np_array_unmasked('time')
-        converter = np.vectorize(lambda x: date(1970, 1, 1) + timedelta(hours=x))
+        converter = np.vectorize(lambda x: (date(1970, 1, 1) + timedelta(hours=x)))
         y = converter(t)
         self.log("Time array shape:{}".format(y.shape))
         return y
@@ -101,10 +101,12 @@ class ParseMogrep(object):
     def toCsv(self, ndarray, colArray, filename, compression=False):
         myDF = pd.DataFrame(ndarray)
         myDF.columns = colArray
+
+        self.log(myDF.head(5))
         if compression:
-            myDF.to_csv(filename, index=False, compression='gzip')
+            myDF.to_csv(filename, index=False,mode="w", compression='gzip')
         else:
-            myDF.to_csv(filename, index=False)
+            myDF.to_csv(filename, index=False,mode="w")
 
     def tiling(self, a, first, second, third, fourth):
         print "MyShape:{} size={}".format(a.shape, a.size)
@@ -181,6 +183,19 @@ class ParseMogrep(object):
             m_all = np.concatenate((m_all, cur_col), axis=1)
         return m_all
 
+    def flatten_any(self, var_name):
+        var = self.get_np_array_unmasked(var_name)
+        # reversed tuple, starting with the last dim first
+        dimensions = self.vars[var_name].dimensions[::-1]
+        dims = []
+        for d in dimensions:
+            print "Working on dim:{}".format(d)
+            if d == "time":
+                dims.append(self.time)
+            else:
+                dims.append(self.get_np_array_unmasked(d))
+        return self.reduce(var, dims)
+
     def process_air_temp(self):
         air_temp = self.get_np_array_unmasked('air_temperature')
         dims = [self.long, self.lat, self.pressure0, self.time]
@@ -193,6 +208,8 @@ if __name__ == "__main__":
     # flat = mog.parse_airtemp()
     # print("Shape:{} Size={}".format(flat.shape, flat.size))
     # mog.toCsv(flat, colArray, "out/air_temp.csv.old_method", False)
-    x =mog.process_air_temp()
+    # x = mog.process_air_temp()
+
+    x = mog.flatten_any('air_temperature')
     print("Size of product:{}".format(x.shape))
     mog.toCsv(x, colArray, "out/air_temp.csv", False)
