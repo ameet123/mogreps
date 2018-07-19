@@ -4,6 +4,13 @@
 
 A simpler approach to reduce added
 
+This uses `tile` and `repeat`
+
+A generic method to write any variable to a CSV
+Usage:
+```python
+flatten_any('air_temperature')
+```
 
 ### Objective:
 

@@ -104,9 +104,9 @@ class ParseMogrep(object):
 
         self.log(myDF.head(5))
         if compression:
-            myDF.to_csv(filename, index=False,mode="w", compression='gzip')
+            myDF.to_csv(filename, index=False, mode="w", compression='gzip')
         else:
-            myDF.to_csv(filename, index=False,mode="w")
+            myDF.to_csv(filename, index=False, mode="w")
 
     def tiling(self, a, first, second, third, fourth):
         print "MyShape:{} size={}".format(a.shape, a.size)
@@ -183,18 +183,23 @@ class ParseMogrep(object):
             m_all = np.concatenate((m_all, cur_col), axis=1)
         return m_all
 
-    def flatten_any(self, var_name):
+    def flatten_any(self, var_name, writeCsv=True):
         var = self.get_np_array_unmasked(var_name)
         # reversed tuple, starting with the last dim first
         dimensions = self.vars[var_name].dimensions[::-1]
         dims = []
         for d in dimensions:
-            print "Working on dim:{}".format(d)
             if d == "time":
                 dims.append(self.time)
             else:
                 dims.append(self.get_np_array_unmasked(d))
-        return self.reduce(var, dims)
+        x = self.reduce(var, dims)
+        if writeCsv:
+            file = "out/{}.csv".format(var_name)
+            colArray = [var_name] + list(dimensions)
+            print("Writing to file:{}".format(file))
+            self.toCsv(x, colArray, file)
+        return x
 
     def process_air_temp(self):
         air_temp = self.get_np_array_unmasked('air_temperature')
@@ -210,6 +215,6 @@ if __name__ == "__main__":
     # mog.toCsv(flat, colArray, "out/air_temp.csv.old_method", False)
     # x = mog.process_air_temp()
 
+    # This writes a csv as well.
     x = mog.flatten_any('air_temperature')
     print("Size of product:{}".format(x.shape))
-    mog.toCsv(x, colArray, "out/air_temp.csv", False)
