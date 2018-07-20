@@ -2,6 +2,13 @@
 
 ### Change:
 
++ 7/20
+used the meshgrid approach
+```python
+mesh(var_name)
+```
+
++ 7/19
 A simpler approach to reduce added
 
 This uses `tile` and `repeat`
