@@ -183,6 +183,18 @@ class ParseMogrep(object):
             m_all = np.concatenate((m_all, cur_col), axis=1)
         return m_all
 
+    def get_var_dims(self, var_name):
+        var = self.get_np_array_unmasked(var_name)
+        # reversed tuple, starting with the last dim first
+        dimensions = self.vars[var_name].dimensions[::-1]
+        dims = []
+        for d in dimensions:
+            if d == "time":
+                dims.append(self.time)
+            else:
+                dims.append(self.get_np_array_unmasked(d))
+        return (var, dims)
+
     def flatten_any(self, var_name, writeCsv=True):
         var = self.get_np_array_unmasked(var_name)
         # reversed tuple, starting with the last dim first
@@ -205,6 +217,10 @@ class ParseMogrep(object):
         air_temp = self.get_np_array_unmasked('air_temperature')
         dims = [self.long, self.lat, self.pressure0, self.time]
         return self.reduce(air_temp, dims)
+
+    def mesh(self, var_name):
+        (var, dims) = self.get_var_dims(var_name)
+        return np.vstack([np.ravel(var)] + [c.ravel() for c in np.meshgrid(*dims)]).T
 
 
 if __name__ == "__main__":
