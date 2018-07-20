@@ -218,9 +218,15 @@ class ParseMogrep(object):
         dims = [self.long, self.lat, self.pressure0, self.time]
         return self.reduce(air_temp, dims)
 
-    def mesh(self, var_name):
+    def mesh(self, var_name, isWriteCsv=True):
         (var, dims) = self.get_var_dims(var_name)
-        return np.vstack([np.ravel(var)] + [c.ravel() for c in np.meshgrid(*dims)]).T
+        x = np.vstack([np.ravel(var)] + [c.ravel() for c in np.meshgrid(*dims)]).T
+        if isWriteCsv:
+            file = "out/{}.csv".format(var_name)
+            colArray = [var_name] + list(dims)
+            print("Writing to file:{}".format(file))
+            self.toCsv(x, colArray, file)
+        return x
 
 
 if __name__ == "__main__":
@@ -232,5 +238,6 @@ if __name__ == "__main__":
     # x = mog.process_air_temp()
 
     # This writes a csv as well.
-    x = mog.flatten_any('air_temperature')
+    # x = mog.flatten_any('air_temperature')
+    x = mog.mesh('air_temperature')
     print("Size of product:{}".format(x.shape))
